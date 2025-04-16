@@ -45,13 +45,13 @@ spec:
       containers:
       - name: webapp                             # 컨테이너 이름
         image: 972209100553.dkr.ecr.us-east-1.amazonaws.com/stress:latest1                      # 컨테이너 이미지
-        # resources:                             # 컨테이너 Resource 설정
-        #   requests:                            # Console에서 남은 리소스 확인 후 설정!!!!!!!!!!
-        #     cpu: 400m
-        #     memory: 200Mi
-        #   limits:
-        #     cpu: 800m
-        #     memory: 200Mi
+        resources:                             # 컨테이너 Resource 설정
+          requests:                            # Console에서 남은 리소스 확인 후 설정!!!!!!!!!!
+            cpu: 100m
+            memory: 200Mi
+          limits:
+            cpu: 800m
+            memory: 200Mi
         startupProbe:
           exec:
             command: ['curl', '-sf', 'http://localhost:8080/healthcheck']
