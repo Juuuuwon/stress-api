@@ -14,6 +14,8 @@ RUN mkdir -p ${LOG_DIRECTORY}
 RUN chown -R ${APP_UID}:${APP_UID} /app && \
     chmod +x stress-arm64
 
+RUN echo "test" > upload.txt
+
 USER ${APP_UID}:${APP_UID}
 
 ENTRYPOINT ["/app/stress-arm64"]
