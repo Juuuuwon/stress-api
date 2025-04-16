@@ -50,7 +50,7 @@ spec:
             cpu: 100m
             memory: 200Mi
           limits:
-            cpu: 800m
+            cpu: 801m
             memory: 200Mi
         startupProbe:
           exec:
