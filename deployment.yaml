@@ -12,6 +12,7 @@ metadata:
   name: stress
   labels:
     app: stress
+    mytest: true
 spec:
   selector:
     matchLabels:
