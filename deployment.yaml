@@ -45,7 +45,7 @@ spec:
       containers:
         - name: webapp # 컨테이너 이름
           image: 972209100553.dkr.ecr.us-east-1.amazonaws.com/stress:latest1 # 컨테이너 이미지
-          command: ["./subtrace", "run", "--", "/app/stress-arm64"]
+          command: ["/app/stress-arm64"]
           securityContext:
             capabilities:
               add: ["SYS_PTRACE"]
