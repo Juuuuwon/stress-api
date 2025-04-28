@@ -1,4 +1,4 @@
-FROM 972209100553.dkr.ecr.us-east-1.amazonaws.com/build:alpine320
+FROM 972209100553.dkr.ecr.us-east-1.amazonaws.com/build:armalpine
 
 # 필요하면 수정!!!!!!!!!!
 ARG APP_USER=skills
