@@ -1,4 +1,4 @@
-FROM alpine:3.20
+FROM 972209100553.dkr.ecr.us-east-1.amazonaws.com/build:alpine320
 
 # 필요하면 수정!!!!!!!!!!
 ARG APP_USER=skills
@@ -6,7 +6,6 @@ ARG APP_UID=1001
 ARG LOG_DIRECTORY=/app/log
 
 # 프록시 관련
-
 
 WORKDIR /app
 
