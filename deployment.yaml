@@ -1,0 +1,150 @@
+############################# 배포 후 kubectl rollout restart deploy stress 필수!!!!!!!!!!!!!!!!!!!!!!
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: stress
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::972209100553:role/stress-role # IAM Role 역할 ARN 수정!!!!!!!!!!!!!!!!!
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: stress
+  labels:
+    app: stress
+spec:
+  selector:
+    matchLabels:
+      app: stress
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: stress
+    spec:
+      serviceAccountName: stress # Service Account 설정 (IAM 권한)
+      nodeSelector: # NodeSelector 설정
+        dedicated: app
+      tolerations: # Toleration 설정
+        - key: "dedicated"
+          operator: "Equal"
+          value: "app"
+          effect: "NoExecute"
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          minDomains: 2 # 고가용성 설정 (무조건 노드 2개 생성)
+          labelSelector:
+            matchLabels:
+              app: stress
+      terminationGracePeriodSeconds: 25
+      containers:
+        - name: webapp # 컨테이너 이름
+          image: 972209100553.dkr.ecr.us-east-1.amazonaws.com/stress:latest1 # 컨테이너 이미지
+          command: ["./subtrace", "run", "--", "/app/stress-arm64"]
+          securityContext:
+            capabilities:
+              add: ["SYS_PTRACE"]
+          # resources:                             # 컨테이너 Resource 설정
+          #   requests:                            # Console에서 남은 리소스 확인 후 설정!!!!!!!!!!
+          #     cpu: 400m
+          #     memory: 200Mi
+          #   limits:
+          #     cpu: 800m
+          #     memory: 200Mi
+          startupProbe:
+            exec:
+              command: ["curl", "-sf", "http://localhost:8080/healthcheck"]
+            # command: ['curl', '-sfd', '{"test": "test"}', 'http://localhost:8080/v1/stress', '-f', '-H', 'Content-Type: application/json']
+            initialDelaySeconds: 0
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 10
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["curl", "-sf", "http://localhost:8080/healthcheck"]
+            # command: ['curl', '-sfd', '{"test": "test"}', 'http://localhost:8080/v1/stress', '-f', '-H', 'Content-Type: application/json']
+            initialDelaySeconds: 0
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 10
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["curl", "-sf", "http://localhost:8080/healthcheck"]
+            # command: ['curl', '-sfd', '{"test": "test"}', 'http://localhost:8080/v1/stress', '-f', '-H', 'Content-Type: application/json']
+            initialDelaySeconds: 0
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 1
+            periodSeconds: 5
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"] # SIGTERM 늦추기 (요청 최대 처리 시간)
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: stress
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: stress
+  minReplicas: 2
+  maxReplicas: 32
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 50
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Percent
+          value: 20
+          periodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: stress
+spec:
+  type: ClusterIP
+  selector:
+    app: stress
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: stress
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: stress
