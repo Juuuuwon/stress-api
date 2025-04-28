@@ -10,7 +10,6 @@ ARG LOG_DIRECTORY=/app/log
 WORKDIR /app
 
 RUN apk add --no-cache curl gcompat
-RUN curl https://minio.juwon.codes/skills/subtrace-$(uname -m) -o subtrace && chmod +x subtrace
 RUN mkdir -p ${LOG_DIRECTORY}
 # 심볼릭 링크 로그 경로 수정!!!!!!!!!
 # RUN ln -sf /dev/stdout ${LOG_DIRECTORY}/app.log
